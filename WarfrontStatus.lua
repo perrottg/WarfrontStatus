@@ -447,7 +447,7 @@ function WarfrontStatus:GetCharacterInfo()
 end
 
 local function UpdateCharacterInfo()
-	SaveCharacterInfo()
+	WarfrontStatus:SaveCharacterInfo()
 end
 
 function WarfrontStatus:OnInitialize()
