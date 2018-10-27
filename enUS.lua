@@ -6,4 +6,5 @@ end
 
 L["Warfront Status"] = true
 L["Character"] = true
+L["Quests"] = true
 L["Rares"] = true

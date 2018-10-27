@@ -32,6 +32,8 @@
     <Content Include="Libs\LibQTip-1.0\LibQTip-1.0.toc">
       <SubType>TableOfContents</SubType>
     </Content>
+    <Content Include="LICENSE" />
+    <Content Include="pkgmeta.yaml" />
     <Content Include="WarfrontStatus.toc">
       <SubType>TableOfContents</SubType>
     </Content>

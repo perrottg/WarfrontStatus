@@ -1,11 +1,11 @@
 local addonName = "WarfrontStatus"
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
-WarfrontStatus = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0" );
+WarfrontStatus = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0");
 local icon = LibStub("LibDBIcon-1.0")
 local LibQTip = LibStub('LibQTip-1.0')
 
 local defaults = {
-	profile = {
+	global = {
 		MinimapButton = {
 			hide = false,
 		}
@@ -18,7 +18,8 @@ local colors = {
 	white = { r = 1.0, g = 1.0, b = 1.0 },
 	yellow = { r = 1.0, g = 1.0, b = 0.2 },
 	grey = { r = 0.5, g = 0.5, b = 0.5 },
-	red = { r = 1.0, g = 0.2, b = 0.2 }
+	red = { r = 1.0, g = 0.2, b = 0.2 },
+	green = { r = 0.2, g = 1.0, b = 0.2 }
 }
 
 local textures = {
@@ -77,7 +78,9 @@ end
 
 
 local function ShowCharacter(characterName, characterInfo)
+	WarfrontStatus:Print("ShowCharacter start")
 	local data = WarfrontStatus:GetDisplayData()
+	local currencies = WarfrontStatus:GetCurrencies()
 	local tooltip = WarfrontStatus.tooltip
 	local line = tooltip:AddLine()
 	local factionIcon = ""
@@ -91,23 +94,38 @@ local function ShowCharacter(characterName, characterInfo)
 
 	tooltip:SetCell(line, 2, factionIcon.." "..characterName)
 	tooltip:SetCell(line, 3, characterInfo.level, "RIGHT")
+	tooltip:SetCell(line, 4, characterInfo.averageItemLevel, "RIGHT")
 
-	column = 4
+	column = 5
+
+	for _, currency in pairs(currencies) do
+		tooltip:SetCell(line, column, characterInfo.currencies[currency.currencyID], "RIGHT")
+		column = column+1
+	end
 		
 	for _, category in pairs(data) do
-		local kills = 0
-		local bosses = category.bosses
+		local progress = 0
+		local total = 0
+		local items = category.items
 
-		for _, boss in pairs(bosses) do
-			if characterInfo.warfrontStatus[boss.name]  then
-				kills = kills + 1
+		for _, item in pairs(items) do
+			if characterInfo.questsCompleted[item.questID]  then
+				progress = progress + 1
+			end
+			if not item.faction or characterInfo.faction == item.faction then
+				total = total + 1
 			end
 		end
 
-		if kills >= #bosses then
-			tooltip:SetCell(line, column, textures.bossDefeated)
-		else  
-			tooltip:SetCell(line, column, kills.."/".. #bosses)
+
+		tooltip:SetCell(line, column, progress.."/".. total)
+
+		if progress >= total then
+			tooltip:SetCellTextColor(line, column, colors.green.r, colors.green.g, colors.green.b)
+
+			--tooltip:SetCell(line, column, textures.bossDefeated)
+		--else  
+		--	tooltip:SetCell(line, column, progress.."/".. total)
 		end
 
 		tooltip:SetCellScript(line, column, "OnEnter", function(self)
@@ -126,11 +144,13 @@ local function ShowCharacter(characterName, characterInfo)
 		local color = RAID_CLASS_COLORS[characterInfo.class]
 		tooltip:SetCellTextColor(line, 2, color.r, color.g, color.b)
 	end	
-
+	WarfrontStatus:Print("ShowCharacter end")
 end
 
 local function ShowHeader(tooltip, marker, headerName)
+	WarfrontStatus:Print("ShowHeader start")
 	local data = WarfrontStatus:GetDisplayData()
+	local currencies = WarfrontStatus:GetCurrencies()
 
 	local line = tooltip:AddHeader()
 	local column = 2
@@ -147,43 +167,55 @@ local function ShowHeader(tooltip, marker, headerName)
 	tooltip:SetCellTextColor(line, column, colors.yellow.r, colors.yellow.g, colors.yellow.b)
 	column = column + 1
 
+	tooltip:SetCell(line, column, "Gear", "RIGHT", nil, nil, nil, nil, 50)
+	tooltip:SetCellTextColor(line, column, colors.yellow.r, colors.yellow.g, colors.yellow.b)
+	column = column + 1
+
+	for _, currency in pairs(currencies) do
+		tooltip:SetCell(line, column, "|T"..currency.texture..":0|t", "RIGHT")
+		tooltip:SetCellTextColor(line, column, colors.yellow.r, colors.yellow.g, colors.yellow.b)
+		column = column+1
+	end
+
 	for _, category in pairs(data) do
 		tooltip:SetCell(line, column, category.name, "CENTER")
 		tooltip:SetCellTextColor(line, column, colors.yellow.r, colors.yellow.g, colors.yellow.b)
 		column = column+1
 	end
 
+	WarfrontStatus:Print("ShowHeader end")
+
 	return line
 end
 
-local function ShowKill(boss, killed)
+local function ShowKill(item, completed)
 	local subTooltip = WarfrontStatus.subTooltip
 	local line = subTooltip:AddLine()
 	local bossTexture = textures.bossAvailable
 	local color = colors.grey
 	local dropTexture = ""
 	
-	if killed then 
+	if completed then 
 		bossTexture = textures.bossDefeated
 		color = colors.red
 	end
 
-	if boss.drops then	
+	if item.drops then	
 		--if boss.drops.gear then
 		--	dropTexture = dropTexture.." "..textures.gear..boss.drops.gear			
 		--end	
-		if boss.drops.mount then
+		if item.drops.mount then
 			dropTexture = dropTexture.." "..textures.mount
 		end
-		if boss.drops.pet then
+		if item.drops.pet then
 			dropTexture = dropTexture.." "..textures.pet		
 		end	
-		if boss.drops.toy then
+		if item.drops.toy then
 			dropTexture = dropTexture.." "..textures.toy
 		end			
 	end
 	
-	subTooltip:SetCell(line, 1, boss.displayName or boss.name, nil, "LEFT")
+	subTooltip:SetCell(line, 1, item.displayName or item.name, nil, "LEFT")
 	subTooltip:SetCell(line, 2, dropTexture, nil, "LEFT")
 	subTooltip:SetCell(line, 3, bossTexture, nil, "CENTER", nil, nil, nil, nil, 20, 0)
 	subTooltip:SetCellTextColor(line, 1, color.r, color.g, color.b)
@@ -221,11 +253,11 @@ function WarfrontStatus:ShowSubTooltip(cell, info)
 	subTooltip:AddSeparator(1, 1, 1, 1, 1.0)
 	subTooltip:AddSeparator(3,0,0,0,0)
 	
-	for _, boss in pairs(category.bosses) do
-		local killed = (character.warfrontStatus and character.warfrontStatus[boss.name])
+	for _, item in pairs(category.items) do
+		local completed = (character.questsCompleted and character.questsCompleted[item.questID])
 									
-		if not boss.faction or character.faction == boss.faction then
-			ShowKill(boss, killed)
+		if not item.faction or character.faction == item.faction then
+			ShowKill(item, completed)
 		end
 	end	
 	
@@ -242,10 +274,12 @@ function WarfrontStatus:ShowSubTooltip(cell, info)
 end
 
 local function ShowRealm(realmName)
-	local realmInfo = self.db.global.realms[realmName]
+	WarfrontStatus:Print("ShowRealm start")
+	local realmInfo = WarfrontStatus.db.global.realms[realmName]
 	local characters = nil
 	local collapsed = false
-	--local epoch = time() - (WorldBossStatus.db.global.characterOptions.inactivityThreshold * 24 * 60 * 60)
+
+	WarfrontStatus:Print("ShowRealm stage 1")
 
 	if realmInfo then
 		characters = realmInfo.characters
@@ -256,13 +290,9 @@ local function ShowRealm(realmName)
 	local currentCharacterName = UnitName("player")
 	local currentRealmName = GetRealmName()
 	local tooltip = WarfrontStatus.tooltip
-	--local levelRestriction = WorldBossStatus.db.global.characterOptions.levelRestruction or false;
 	local minimumLevel = 1
 
-	--if WorldBossStatus.db.global.characterOptions.levelRestriction then
-	--	minimumLevel = WorldBossStatus.db.global.characterOptions.minimumLevel		
-	--	if not minimumLevel then minimumLevel = 90 end
-	--end	
+	
 		
 	if not characters then
 		return 
@@ -270,9 +300,7 @@ local function ShowRealm(realmName)
 
 	for k,v in pairs(characters) do
 		local inlcude = true
-		if (realmName ~= currentRealmName or k ~= currentCharacterName) and 
-		   (not WorldBossStatus.db.global.characterOptions.removeInactive or v.lastUpdate > epoch)  and
-   		   (v.level >= minimumLevel) then
+		if (realmName ~= currentRealmName or k ~= currentCharacterName) then
 				table.insert(characterNames, k);
 		end
 	end
@@ -281,17 +309,20 @@ local function ShowRealm(realmName)
 		return
 	end
 			   
+	WarfrontStatus:Print("ShowRealm stage 2")
 	table.sort(characterNames)
 
 	tooltip:AddSeparator(2,0,0,0,0)
 
+	
+	WarfrontStatus:Print("ShowRealm stage 3")
 	if not collapsed then
 		line = ShowHeader(tooltip, "|TInterface\\Buttons\\UI-MinusButton-Up:16|t", realmName)
 
 		tooltip:AddSeparator(3,0,0,0,0)
 
 		for k,v in pairs(characterNames) do
-			WarfrontStatus:ShowCharacter(v, characters[v])
+			ShowCharacter(v, characters[v])
 		end
 
 		tooltip:AddSeparator(1, 1, 1, 1, 1.0)
@@ -299,24 +330,31 @@ local function ShowRealm(realmName)
 		line = ShowHeader(tooltip, "|TInterface\\Buttons\\UI-PlusButton-Up:16|t", realmName)
 	end
 
+	WarfrontStatus:Print("ShowRealm stage 4")
+
 	tooltip:SetCellTextColor(line, 2, colors.yellow.r, colors.yellow.g, colors.yellow.b)	
 	tooltip:SetCellScript(line, 1, "OnMouseUp", RealmOnClick, realmName)
+	WarfrontStatus:Print("ShowRealm end")
 end
 
 function RealmOnClick(cell, realmName)
-	WorldBossStatus.db.global.realms[realmName].collapsed = not WorldBossStatus.db.global.realms[realmName].collapsed
-	WorldBossStatus:ShowToolTip()
+	WarfrontStatus.db.global.realms[realmName].collapsed = not WarfrontStatus.db.global.realms[realmName].collapsed
+	WarfrontStatus:ShowToolTip()
 end
 
 function WarfrontStatus:ShowToolTip()
 	local tooltip = WarfrontStatus.tooltip
+	local currencies = WarfrontStatus:GetCurrencies() or {}
+	local categories = WarfrontStatus:GetDisplayData() or {}
+
+	WarfrontStatus:Print("ShowToolTip start")
 
 	if LibQTip:IsAcquired("WarfrontStatusTooltip") and tooltip then
 		tooltip:Clear()
 	else
-		local columnCount = 5
+		local columnCount = 4 + #categories + #currencies
 
-		tooltip = LibQTip:Acquire("WarfrontStatusTooltip", columnCount, "CENTER", "LEFT", "CENTER", "CENTER", "CENTER")
+		tooltip = LibQTip:Acquire("WarfrontStatusTooltip", columnCount, "CENTER", "LEFT", "CENTER", "CENTER", "CENTER", "CENTER")
 		WarfrontStatus.tooltip = tooltip 
 	end
 
@@ -331,7 +369,7 @@ function WarfrontStatus:ShowToolTip()
 	tooltip:AddSeparator(6,0,0,0,0)
 	tooltip:AddSeparator(1, 1, 1, 1, 1.0)
 
-	--ShowRealm(GetRealmName())
+	ShowRealm(GetRealmName())
 
 	tooltip:AddSeparator(3,0,0,0,0)
 
@@ -340,23 +378,11 @@ function WarfrontStatus:ShowToolTip()
 		tooltip:SmartAnchorTo(frame)
 	end 
 
+	--WarfrontStatus:SaveCharacterInfo()
+
 	tooltip:UpdateScrolling()
 	tooltip:Show()
-end
-
-function GetWarfrontStatus()
-	local data = WarfrontStatus:GetDisplayData()
-	local warfrontStatus = {}
-
-	for _, category in pairs(data) do
-		for _, boss in pairs(category.bosses) do
-			if boss.questId and IsQuestFlaggedCompleted(boss.questId) then
-				warfrontStatus[boss.name] =  time()
-			end
-		end
-	end
-
-	return warfrontStatus
+	WarfrontStatus:Print("ShowToolTip end")
 end
 
 function WarfrontStatus:GetRealmInfo(realmName)
@@ -374,21 +400,58 @@ function WarfrontStatus:GetRealmInfo(realmName)
 	return realmInfo
 end
 
-function WarfrontStatus:GetCharacterInfo()
-	local realmInfo = WorldBossStatus:GetRealmInfo(GetRealmName())
-	local characterInfo = realmInfo.characters[UnitName("player")] or {}
+function WarfrontStatus:SaveCharacterInfo(info)
+	WarfrontStatus:Print("SaveCharacterInfo start")
+	local characterName = UnitName("player")
+	local realmInfo = WarfrontStatus:GetRealmInfo(GetRealmName())
+	local characterInfo = info or WarfrontStatus:GetCharacterInfo()
 
-	characterInfo.warfrontStatus = GetWarfrontStatus()
+	realmInfo.characters = realmInfo.characters or {}
+	realmInfo.characters[characterName]  = characterInfo
+
+	self.db.global.realms = self.db.global.realms or  {}
+	self.db.global.realms[GetRealmName()] = realmInfo
+	WarfrontStatus:Print("SaveCharacterInfo end")
+end
+
+function WarfrontStatus:GetCharacterInfo()
+	WarfrontStatus:Print("GetCharacterInfo start")
+	local realmInfo = WarfrontStatus:GetRealmInfo(GetRealmName())
+	local characterInfo = realmInfo.characters[UnitName("player")] or {}
+	local data = WarfrontStatus:GetDisplayData()
+	local currencies = WarfrontStatus:GetCurrencies()
+
 	characterInfo.lastUpdate = time()
 	_, characterInfo.class = UnitClass("player")
 	characterInfo.level = UnitLevel("player")
 	characterInfo.faction = UnitFactionGroup("player")
+	characterInfo.averageItemLevel = math.floor(GetAverageItemLevel())
+	characterInfo.currencies = {}
+	characterInfo.questsCompleted = {}
+
+	for _, currency in pairs(currencies) do
+		_, characterInfo.currencies[currency.currencyID] = GetCurrencyInfo(currency.currencyID)
+	end
+
+	for _, category in pairs(data) do
+		for _, item in pairs(category.items) do
+			if item.questID and IsQuestFlaggedCompleted(item.questID) then
+				characterInfo.questsCompleted[item.questID] =  time()
+			end
+		end
+	end
+
+	WarfrontStatus:Print("GetCharacterInfo end")
 
 	return characterInfo
 end
 
+local function UpdateCharacterInfo()
+	SaveCharacterInfo()
+end
+
 function WarfrontStatus:OnInitialize()
-	self.db = LibStub("AceDB-3.0"):New("WarfrontStatusDB", defaults)
+	self.db = LibStub("AceDB-3.0"):New("WarfrontStatusDB", defaults,true)
 
 	
 	self.MinimapButton = { hide = false }
@@ -402,6 +465,8 @@ function WarfrontStatus:OnEnable()
 	self:RegisterEvent("BOSS_KILL")
 	self:RegisterEvent("QUEST_TURNED_IN")
 	self:RegisterEvent("PLAYER_LOGOUT")
+
+	WarfrontStatus:ScheduleTimer(UpdateCharacterInfo, 3)
 end
 
 function WarfrontStatus:OnDisable()
