@@ -6,20 +6,21 @@ function AddWarfrontQuests()
 	local mapInfo = C_Map.GetMapInfo(14)
 
 	category.name = L["Quests"] 
-    category.title = mapInfo.name.." "..category.name 
+	category.title = mapInfo.name.." "..category.name 
+	category.columns = { "Quest", "Rewards", "Completed"}
 	category.items = {
-		{ type = "quest", name = "Death to The Defiler", questID = 53153, faction = "Alliance" },
-		{ type = "quest", name = "The League Will Lose", questID = 53154, faction = "Horde" },
-		{ type = "quest", name = "Twice-Exiled", questID = 53192, faction = "Alliance" },
-		{ type = "quest", name = "Twice-Exiled", questID = 53193, faction = "Horde" },
-		{ type = "quest", name = "Executing Exorcisms", questID = 53179, faction = "Alliance" },
-		{ type = "quest", name = "Executing Exorcisms", questID = 53190, faction = "Horde" },
-		{ type = "quest", name = "Boulderfist Beatdown", questID = 53146, faction = "Alliance" },
-		{ type = "quest", name = "Boulderfist Beatdown", questID = 53148, faction = "Horde" },
-		{ type = "quest", name = "Sins of the Syndicate", questID = 53162, faction = "Alliance" },
-		{ type = "quest", name = "Sins of the Syndicate", questID = 53173, faction = "Horde" },
-		{ type = "quest", name = "Wiping Out the Witherbark", questID = 53149, faction = "Alliance" },
-		{ type = "quest", name = "Wiping Out the Witherbark", questID = 53150, faction = "Horde" }
+		{ type = "quest", name = "Death to The Defiler", questID = 53153, faction = "Alliance", rewards = { { rewardType = item, itemID = 164578} } },
+		{ type = "quest", name = "The League Will Lose", questID = 53154, faction = "Horde", rewards = { { rewardType = item, itemID = 164578} } },
+		{ type = "quest", name = "Twice-Exiled", questID = 53192, faction = "Alliance", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} }  },
+		{ type = "quest", name = "Twice-Exiled", questID = 53193, faction = "Horde", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} }  },
+		{ type = "quest", name = "Executing Exorcisms", questID = 53179, faction = "Alliance", rewards = { { rewardType = currency, currencyID = 1553, amount = 300} } },
+		{ type = "quest", name = "Executing Exorcisms", questID = 53190, faction = "Horde", rewards = { { rewardType = currency, currencyID = 1553, amount = 300} } },
+		{ type = "quest", name = "Boulderfist Beatdown", questID = 53146, faction = "Alliance", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} } },
+		{ type = "quest", name = "Boulderfist Beatdown", questID = 53148, faction = "Horde", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} } },
+		{ type = "quest", name = "Sins of the Syndicate", questID = 53162, faction = "Alliance", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} }  },
+		{ type = "quest", name = "Sins of the Syndicate", questID = 53173, faction = "Horde", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} }  },
+		{ type = "quest", name = "Wiping Out the Witherbark", questID = 53149, faction = "Alliance", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} }  },
+		{ type = "quest", name = "Wiping Out the Witherbark", questID = 53150, faction = "Horde", rewards = { { rewardType = currency, currencyID = 1560, amount = 200} }  }
 		-- rewards = {{ currencyID = 1560, amount = 200 }}, gains = {{  faction = 2157, amount = 75 }, { faction = 2159, amunt = 75 } }
 	}
 
@@ -31,8 +32,21 @@ function AddWarfrontRares()
 	local mapInfo = C_Map.GetMapInfo(14)
 
 	category.name = L["Rares"] 
-    category.title = mapInfo.name..' '..L["Rares"] 
+	category.title = mapInfo.name..' '..L["Rares"] 
+	category.columns = { "NPC", "Drops", "Defeated"}
     category.items = {		
+		{
+			name = EJ_GetEncounterInfo(2212),
+			questID = 52848,
+			faction = "Horde",
+			drops = { toy = true }			
+		},
+		{
+			name = EJ_GetEncounterInfo(2213),
+			questID = 52847,
+			faction = "Alliance",
+			drops = { toy = true }			
+		},
 		{ 
 			name = "Beastrider Kama", 
 			questID = 53083, 
