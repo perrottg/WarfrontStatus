@@ -62,8 +62,13 @@ function WarfrontStatus:QUEST_TURNED_IN(event, questID)
 
 end
 
-function WarfrontStatus:PLAYER_LOGOUT()
-	
+function WarfrontStatus:PLAYER_ENTERING_WORLD()
+	WarfrontStatus:SaveCharacterInfo()
+end
+
+
+function WarfrontStatus:PLAYER_LEAVING_WORLD()
+	WarfrontStatus:SaveCharacterInfo()
 end
 
 local function HideSubTooltip()
@@ -302,29 +307,12 @@ local function ShowRealm(realmName)
 		collapsed = realmInfo.collapsed
 	end
 
-	--local characterNames = {}
-	--local currentCharacterName = UnitName("player")
-	--local currentRealmName = GetRealmName()
 	local tooltip = WarfrontStatus.tooltip
 	local minimumLevel = 1
 
 	if not characters then
 		return 
 	end
-
-	--for k,v in pairs(characters) do
-	--	local inlcude = true
-	--	if (realmName ~= currentRealmName or k ~= currentCharacterName) then
-	--			table.insert(characterNames, k);
-	--	end
-	--end
-
-	--if (table.getn(characterNames) == 0) then
-	--	return
-	--end
-		
-	
-	--table.sort(characterNames)
 
 	local sortedCharacters = {}
 
@@ -347,10 +335,6 @@ local function ShowRealm(realmName)
 		line = ShowHeader(tooltip, "|TInterface\\Buttons\\UI-MinusButton-Up:16|t", realmName)
 
 		tooltip:AddSeparator(3,0,0,0,0)
-
-		--for k,v in pairs(characterNames) do
-			--ShowCharacter(v, characters[v])
-		--end
 
 		for _, character in pairs(sortedCharacters) do
 			ShowCharacter(character.name, character)
@@ -447,14 +431,17 @@ function WarfrontStatus:GetCharacterInfo()
 	local characterInfo = realmInfo.characters[UnitName("player")] or {}
 	local data = WarfrontStatus:GetDisplayData()
 	local currencies = WarfrontStatus:GetCurrencies()
+	local averageItemLevel = floor(GetAverageItemLevel())
 
 	characterInfo.lastUpdate = time()
 	_, characterInfo.class = UnitClass("player")
 	characterInfo.level = UnitLevel("player")
 	characterInfo.faction = UnitFactionGroup("player")
-	characterInfo.averageItemLevel = math.floor(GetAverageItemLevel())
-	characterInfo.currencies = {}
-	characterInfo.questsCompleted = {}
+	if averageItemLevel and averageItemLevel > 0 then
+		characterInfo.averageItemLevel = averageItemLevel
+	end
+	characterInfo.currencies = characterInfo.currencies or {}
+	characterInfo.questsCompleted = characterInfo.questsCompleted or {}
 
 	for _, currency in pairs(currencies) do
 		_, characterInfo.currencies[currency.currencyID] = GetCurrencyInfo(currency.currencyID)
@@ -489,7 +476,8 @@ end
 function WarfrontStatus:OnEnable()
 	self:RegisterEvent("BOSS_KILL")
 	self:RegisterEvent("QUEST_TURNED_IN")
-	self:RegisterEvent("PLAYER_LOGOUT")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD")
+	self:RegisterEvent("PLAYER_LEAVING_WORLD")
 
 	WarfrontStatus:ScheduleTimer(UpdateCharacterInfo, 3)
 end
@@ -497,5 +485,6 @@ end
 function WarfrontStatus:OnDisable()
 	self:UnregisterEvent("BOSS_KILL")
 	self:UnregisterEvent("QUEST_TURNED_IN")
-	self:UnregisterEvent("PLAYER_LOGOUT")
+	self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+	self:UnregisterEvent("PLAYER_LEAVING_WORLD")
 end
