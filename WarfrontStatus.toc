@@ -1,6 +1,6 @@
-## Interface: 80000
+## Interface: 80100
 ## Title: Warfront Status
-## Version: v1.0.1
+## Version: v1.0.2
 ## Author: Ludius of Caelestrasz-US
 ## Notes: Warfront Status keeps track of which faction has control, the rares defeated and contribution quests completed on all your characters.
 ## SavedVariables: WarfrontStatusDB
